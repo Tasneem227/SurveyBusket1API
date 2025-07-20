@@ -1,0 +1,6 @@
+@SurveyBusket1_HostAddress = http://localhost:5223
+
+GET {{SurveyBusket1_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
