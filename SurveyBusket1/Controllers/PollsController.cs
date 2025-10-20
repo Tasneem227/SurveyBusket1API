@@ -1,54 +1,120 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using SurveyBusket8.Contracts.Polls;
+
 namespace SurveyBusket1.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class PollsController(IPollService pollService) : ControllerBase
+public class PollsController(IPollService pollService,IMapper mapper) : ControllerBase
 {
     private readonly IPollService _pollService = pollService;
+    private readonly IMapper _mapper = mapper;
 
     [HttpGet]
     [Route("GetAll")]
-    public IActionResult GetAll()
+    [Authorize]
+    public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
-               return Ok(_pollService.GetAll());
+        var polls =await _pollService.GetAllAsync( cancellationToken);
+        var response = polls.Adapt<IEnumerable<poll>>();
+        return Ok(response);  
     }
-    
+
     //api/polls/id
     [HttpGet("{id}")]
-    public IActionResult Get(int id)
+    public async Task<IActionResult> Get([FromRoute] int id
+        , CancellationToken cancellationToken)
     {
-        var poll = _pollService.Get(id);
-            
-        //if (poll is null)
-        //{
-        //    return NotFound();
-        //}
-        //return Ok(poll);
-        return poll is null? NotFound() : Ok(poll);
+        var poll =await _pollService.GetAsync(id,  cancellationToken);
+        if (poll is null)
+        {
+            return NotFound();
+        }
+        PollResponse response = poll.Adapt<PollResponse>(); // from poll to pollresponse
+        //PollResponse response = _mapper.Map<PollResponse>(poll);
+        return Ok(response);
     }
+
     //add new poll
     [HttpPost("")]
-    public IActionResult Add(poll request) { 
-        var newPoll=_pollService.Add(request);
-        return CreatedAtAction(nameof(Get), new { id = newPoll.Id }, newPoll); 
+    public async Task<IActionResult> Add([FromForm] PollRequest request,
+        [FromServices] IValidator<PollRequest> validator,
+        CancellationToken cancellationToken)
+    {
+
+        var newPoll =await _pollService.AddAsync(request.Adapt<poll>(), cancellationToken);
+        return CreatedAtAction(nameof(Get), new { id = newPoll.Id }, newPoll); //status code 201
     }
 
     //update poll
     [HttpPut("{id}")]
-    public IActionResult Update(int id, poll request)
+    public async Task<IActionResult> UpdateAsync([FromRoute] int id,
+        [FromBody] PollRequest request
+        ,CancellationToken cancellationToken)
     {
-        var isUpdated = _pollService.update(id, request);
+        var isUpdated =await _pollService.updateAsync(id, request.Adapt<poll>(),cancellationToken);// implicit operator in CreatePollRequest class
         return isUpdated ? NoContent() : NotFound();
 
     }
 
     //delete poll
     [HttpDelete("{id}")]
-    public IActionResult Delete(int id)
+    public async Task<IActionResult> Delete([FromRoute] int id
+        , CancellationToken cancellationToken)
     {
-        var isDeleted = _pollService.Delete(id);
+        var isDeleted =await _pollService.DeleteAsync(id, cancellationToken);
         return isDeleted ? NoContent() : NotFound();
     }
 
+    //Toggle publish status
+    [HttpPut("{id}/togglePublish")]
+    public async Task<IActionResult> TogglePublish([FromRoute] int id,
+        CancellationToken cancellationToken)
+    {
+        var isUpdated = await _pollService.TogglePublishStatusAsync(id, cancellationToken);// implicit operator in CreatePollRequest class
+        return isUpdated ? NoContent() : NotFound();
+
+    }
+
+    //[HttpGet("Test")]
+    //public IActionResult Test([FromQuery] int id, [FromQuery] poll request)
+    //{
+    //    //anonymous object 
+    //    return Ok(request);
+    //}
+    //[HttpGet("Test")]
+    //public IActionResult Test([FromHeader(Name ="x-lang")] string lang)
+    //{
+
+    //    return Ok(lang);
+    //}
+    //    [HttpGet("Test")]
+    //    public IActionResult Test()
+    //    {
+    //        var stud = new Student()
+    //        {
+    //            Id = 1,
+    //            FirstName = "mm",
+    //            MiddleName = "jj",
+    //            LastName = "jjj",
+    //            dateofbirth = new DateTime(2003, 07, 29),
+    //            Department = new Department()
+    //            {
+    //                Id = 1,
+    //                Name = "ddddddd"
+    //            }
+    //        };
+    //        var studresp = stud.Adapt<StudentResponse>();
+    //        return Ok(studresp);
+    //    }
+    //}
+    //[HttpPost("Test")]
+    //public IActionResult Test([FromBody]Student std)
+    //{
+
+    //    return Ok("val ok");
+    //}
 }

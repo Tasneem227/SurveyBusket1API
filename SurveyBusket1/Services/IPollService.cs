@@ -1,10 +1,13 @@
-﻿namespace SurveyBusket1.Services;
+﻿using System.Threading;
+
+namespace SurveyBusket1.Services;
 
 public interface IPollService
 {
-    IEnumerable<poll> GetAll();
-    poll Get(int id);
-    poll Add(poll poll);
-    bool update(int id, poll poll);
-    bool Delete(int id);
+    Task<IEnumerable<poll>> GetAllAsync(CancellationToken cancellationToken);
+    Task<poll?> GetAsync(int id, CancellationToken cancellationToken);
+    Task<poll> AddAsync(poll poll,CancellationToken cancellationToken=default);
+    Task<bool> updateAsync(int id, poll poll, CancellationToken cancellationToken);
+    Task<bool> DeleteAsync(int id, CancellationToken cancellationToken);
+    Task<bool> TogglePublishStatusAsync(int id, CancellationToken cancellationToken);
 }
