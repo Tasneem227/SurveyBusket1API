@@ -38,6 +38,16 @@ public static class DependencyInjection
 
         services.AddHttpContextAccessor();
 
+        services.AddCors(options =>
+
+            options.AddDefaultPolicy(builder =>
+            {
+                builder.AllowAnyOrigin()
+                       .AllowAnyMethod()
+                       .AllowAnyHeader();
+            }
+            ));
+            
         return services;
     }
     public static IServiceCollection AddAuthConfig(this IServiceCollection services , IConfiguration configuration)

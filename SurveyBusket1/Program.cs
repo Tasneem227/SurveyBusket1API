@@ -21,6 +21,7 @@ if (app.Environment.IsDevelopment())
 
 app.MapIdentityApi<ApplicationUser>();
 app.UseHttpsRedirection();
+app.UseCors();
 app.UseAuthorization();
 
 app.MapControllers();
