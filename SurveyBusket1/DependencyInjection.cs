@@ -35,6 +35,9 @@ public static class DependencyInjection
 
         services.AddFluentValidationAutoValidation()
          .AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+
+        services.AddHttpContextAccessor();
+
         return services;
     }
     public static IServiceCollection AddAuthConfig(this IServiceCollection services , IConfiguration configuration)

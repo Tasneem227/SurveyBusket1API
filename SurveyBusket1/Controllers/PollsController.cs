@@ -8,6 +8,8 @@ namespace SurveyBusket1.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize]
+
 public class PollsController(IPollService pollService,IMapper mapper) : ControllerBase
 {
     private readonly IPollService _pollService = pollService;
@@ -19,7 +21,7 @@ public class PollsController(IPollService pollService,IMapper mapper) : Controll
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
         var polls =await _pollService.GetAllAsync( cancellationToken);
-        var response = polls.Adapt<IEnumerable<poll>>();
+        var response = polls.Adapt<IEnumerable<PollResponse>>();
         return Ok(response);  
     }
 
@@ -40,13 +42,13 @@ public class PollsController(IPollService pollService,IMapper mapper) : Controll
 
     //add new poll
     [HttpPost("")]
-    public async Task<IActionResult> Add([FromForm] PollRequest request,
+    public async Task<IActionResult> Add([FromBody] PollRequest request,
         [FromServices] IValidator<PollRequest> validator,
         CancellationToken cancellationToken)
     {
 
         var newPoll =await _pollService.AddAsync(request.Adapt<poll>(), cancellationToken);
-        return CreatedAtAction(nameof(Get), new { id = newPoll.Id }, newPoll); //status code 201
+        return CreatedAtAction(nameof(Get), new { id = newPoll.Id }, newPoll.Adapt<PollResponse>()); //status code 201
     }
 
     //update poll
