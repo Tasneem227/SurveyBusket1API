@@ -4,6 +4,7 @@ namespace SurveyBusket8.Contracts.Polls;
 
 public record PollRequest
 (
+    int Id,
     string Title ,
      string Summary,
         DateTime StartsAt,

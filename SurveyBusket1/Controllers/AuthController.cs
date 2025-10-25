@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using SurveyBusket1.Abstractions;
 using SurveyBusket1.Contracts.Authentication;
 using SurveyBusket8.Contracts.Authentication;
 using SurveyBusket8.Services;
@@ -22,7 +23,7 @@ public class AuthController(IAuthService authService, IConfiguration configurati
     {
         var authResult= await _AuthService.GetTokenAsync(loginRequest.Email, loginRequest.Password, cancellationToken);
         
-            return authResult is null ? BadRequest("Invalid Email or password"):Ok(authResult);
+            return authResult.IsFailure ? BadRequest(authResult.Error):Ok(authResult.Value);
 
     }
     [HttpPost("Refresh")]
@@ -30,29 +31,30 @@ public class AuthController(IAuthService authService, IConfiguration configurati
     {
         var authResult = await _AuthService.GetRefreshTokenAsync(refreshTokenRequest.Token,refreshTokenRequest.RefreshToken, cancellationToken);
 
-        return authResult is null ? BadRequest("Invalid Token") : Ok(authResult);
+        return authResult.IsFailure ? Problem(statusCode: StatusCodes.Status400BadRequest, title: authResult.Error.Code, detail: authResult.Error.Description)
+            : Ok(authResult.Value);
 
     }
     [HttpPost("revoke-refresh-token")]
     public async Task<IActionResult> RevokeRefreshTokenAsync([FromBody] RefreshTokenRequest refreshTokenRequest, CancellationToken cancellationToken)
     {
-        bool isRevoked = await _AuthService.RevokeRefreshTokenAsync(refreshTokenRequest.Token, refreshTokenRequest.RefreshToken, cancellationToken);
+        var isRevoked = await _AuthService.RevokeRefreshTokenAsync(refreshTokenRequest.Token, refreshTokenRequest.RefreshToken, cancellationToken);
 
-        return isRevoked ?Ok(): BadRequest("operation failed") ;
+        return isRevoked.IsSuccess ? Ok() : Problem(statusCode: StatusCodes.Status400BadRequest, title: isRevoked.Error.Code, detail: isRevoked.Error.Description);
 
     }
 
-    [HttpGet("")]
-    public IActionResult Test()
-    {
-        var _config = new
-        {
-            mykey = _JwtOptions.key,
-            //connectionString = _Configuration["ConnectionStrings:DefaultConnections"],
-            //Hello_java = _Configuration["Hello.java"],
-            //ASPNETCORE_ENVIRONMENT = _Configuration["ASPNETCORE_ENVIRONMENT"]
-        };
-        return Ok(_config);
-    }
+    //[HttpGet("")]
+    //public IActionResult Test()
+    //{
+    //    var _config = new
+    //    {
+    //        mykey = _JwtOptions.key,
+    //        //connectionString = _Configuration["ConnectionStrings:DefaultConnections"],
+    //        //Hello_java = _Configuration["Hello.java"],
+    //        //ASPNETCORE_ENVIRONMENT = _Configuration["ASPNETCORE_ENVIRONMENT"]
+    //    };
+    //    return Ok(_config);
+    //}
 
 }

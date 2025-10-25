@@ -16,6 +16,9 @@ global using SurveyBusket8.Persistence.EntitiesConfigurations;
 global using SurveyBusket8.Entities;
 global using SurveyBusket8.Contracts.Authentication;
 global using SurveyBusket1.Athentication;
+global using SurveyBusket1.Abstractions;
+global using SurveyBusket1.Errors;
+
 
 
 

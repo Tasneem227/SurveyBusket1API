@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using SurveyBusket1.Abstractions;
 using SurveyBusket8.Contracts.Polls;
 
 namespace SurveyBusket1.Controllers;
@@ -30,14 +31,8 @@ public class PollsController(IPollService pollService,IMapper mapper) : Controll
     public async Task<IActionResult> Get([FromRoute] int id
         , CancellationToken cancellationToken)
     {
-        var poll =await _pollService.GetAsync(id,  cancellationToken);
-        if (poll is null)
-        {
-            return NotFound();
-        }
-        PollResponse response = poll.Adapt<PollResponse>(); // from poll to pollresponse
-        //PollResponse response = _mapper.Map<PollResponse>(poll);
-        return Ok(response);
+        var result =await _pollService.GetAsync(id,  cancellationToken);
+        return result.IsFailure ? Problem(statusCode: StatusCodes.Status404NotFound, title: result.Error.Code, detail: result.Error.Description) : Ok(result.Value);
     }
 
     //add new poll
@@ -47,18 +42,18 @@ public class PollsController(IPollService pollService,IMapper mapper) : Controll
         CancellationToken cancellationToken)
     {
 
-        var newPoll =await _pollService.AddAsync(request.Adapt<poll>(), cancellationToken);
-        return CreatedAtAction(nameof(Get), new { id = newPoll.Id }, newPoll.Adapt<PollResponse>()); //status code 201
+        var newPoll = await _pollService.AddAsync(request, cancellationToken);
+        return CreatedAtAction(nameof(Get), new { id = newPoll.Value.Id }, newPoll.Value); //status code 201
     }
 
     //update poll
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateAsync([FromRoute] int id,
         [FromBody] PollRequest request
-        ,CancellationToken cancellationToken)
+        , CancellationToken cancellationToken)
     {
-        var isUpdated =await _pollService.updateAsync(id, request.Adapt<poll>(),cancellationToken);// implicit operator in CreatePollRequest class
-        return isUpdated ? NoContent() : NotFound();
+        var result = await _pollService.updateAsync(id, request, cancellationToken);// implicit operator in CreatePollRequest class
+        return result.IsSuccess ? NoContent() : Problem(statusCode: StatusCodes.Status404NotFound, title: result.Error.Code, detail: result.Error.Description);
 
     }
 
@@ -67,9 +62,10 @@ public class PollsController(IPollService pollService,IMapper mapper) : Controll
     public async Task<IActionResult> Delete([FromRoute] int id
         , CancellationToken cancellationToken)
     {
-        var isDeleted =await _pollService.DeleteAsync(id, cancellationToken);
-        return isDeleted ? NoContent() : NotFound();
+        var result = await _pollService.DeleteAsync(id, cancellationToken);
+        return result.IsSuccess ? NoContent() : Problem(statusCode: StatusCodes.Status404NotFound, title: result.Error.Code, detail: result.Error.Description);
     }
+
 
     //Toggle publish status
     [HttpPut("{id}/togglePublish")]
@@ -77,7 +73,7 @@ public class PollsController(IPollService pollService,IMapper mapper) : Controll
         CancellationToken cancellationToken)
     {
         var isUpdated = await _pollService.TogglePublishStatusAsync(id, cancellationToken);// implicit operator in CreatePollRequest class
-        return isUpdated ? NoContent() : NotFound();
+        return isUpdated.IsSuccess ? NoContent() : Problem(statusCode: StatusCodes.Status404NotFound, title: isUpdated.Error.Code, detail: isUpdated.Error.Description);
 
     }
 
@@ -119,4 +115,5 @@ public class PollsController(IPollService pollService,IMapper mapper) : Controll
 
     //    return Ok("val ok");
     //}
+
 }
