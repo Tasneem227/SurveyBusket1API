@@ -1,4 +1,6 @@
 ﻿
+using Azure.Core;
+using Microsoft.EntityFrameworkCore;
 using SurveyBusket8.Persistence;
 using System.Threading.Tasks;
 
@@ -19,14 +21,22 @@ public class PollService(ApplicationDBContext context) : IPollService
 
     public async Task<Result<PollResponse>> AddAsync(PollRequest pollRequest, CancellationToken cancellationToken = default)
     {
+        var isExistingTitle = await _Context.Polls.AnyAsync(x => x.Title == pollRequest.Title, cancellationToken: cancellationToken);
+        if (isExistingTitle)
+            return Result.Failure<PollResponse>(PollErrors.DuplicatedPollTitle);
+
         var poll = pollRequest.Adapt<poll>();
-        await _Context.AddAsync(poll, cancellationToken);
+        await _Context.Polls.AddAsync(poll, cancellationToken);
         await _Context.SaveChangesAsync(cancellationToken);
         return Result.Success(poll.Adapt<PollResponse>());
     }
 
     public async Task<Result> updateAsync(int id, PollRequest poll, CancellationToken cancellationToken)
     {
+        var isExistingTitle = await _Context.Polls.AnyAsync(x => x.Title == poll.Title && x.Id!=id,cancellationToken);
+        if(isExistingTitle)
+            return Result.Failure(PollErrors.DuplicatedPollTitle);
+
         var currentPoll = await _Context.Polls.FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
         if (currentPoll is null)
         {

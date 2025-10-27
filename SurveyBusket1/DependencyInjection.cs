@@ -47,6 +47,9 @@ public static class DependencyInjection
                        .AllowAnyHeader();
             }
             ));
+
+        services.AddExceptionHandler<GlobalExceptionHandler>();
+        services.AddProblemDetails();
             
         return services;
     }

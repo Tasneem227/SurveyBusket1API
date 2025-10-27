@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using SurveyBasket.Abstractions;
 using SurveyBusket1.Abstractions;
 using SurveyBusket8.Contracts.Polls;
 
@@ -9,7 +10,7 @@ namespace SurveyBusket1.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize]
+//[Authorize]
 
 public class PollsController(IPollService pollService,IMapper mapper) : ControllerBase
 {
@@ -18,7 +19,7 @@ public class PollsController(IPollService pollService,IMapper mapper) : Controll
 
     [HttpGet]
     [Route("GetAll")]
-    [Authorize]
+    
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
         var polls =await _pollService.GetAllAsync( cancellationToken);
@@ -53,7 +54,12 @@ public class PollsController(IPollService pollService,IMapper mapper) : Controll
         , CancellationToken cancellationToken)
     {
         var result = await _pollService.updateAsync(id, request, cancellationToken);// implicit operator in CreatePollRequest class
-        return result.IsSuccess ? NoContent() : Problem(statusCode: StatusCodes.Status404NotFound, title: result.Error.Code, detail: result.Error.Description);
+        if (result.IsSuccess)
+            return NoContent();
+
+        return result.Error.Equals(PollErrors.DuplicatedPollTitle)
+                ? result.ToProblem(StatusCodes.Status409Conflict)
+                : result.ToProblem(StatusCodes.Status404NotFound);
 
     }
 
