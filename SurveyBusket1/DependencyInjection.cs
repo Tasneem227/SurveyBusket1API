@@ -50,7 +50,8 @@ public static class DependencyInjection
 
         services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddProblemDetails();
-            
+
+        services.AddScoped<IQuestionService, QuestionService>();
         return services;
     }
     public static IServiceCollection AddAuthConfig(this IServiceCollection services , IConfiguration configuration)

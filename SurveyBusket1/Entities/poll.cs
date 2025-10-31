@@ -9,7 +9,8 @@ public class poll:AuditableEntity
     public string Summary { get; set; }=string.Empty;
     public bool IsPublished { get; set; } 
     public DateTime StartsAt { get; set; } 
-    public DateTime EndsAt { get; set; } 
+    public DateTime EndsAt { get; set; }
+    public ICollection<Question> Questions { get; set; } = [];
     //public test test { get; set; } = default!;//don't know what ! means
 
     //public static explicit operator PollResponse(poll p)
